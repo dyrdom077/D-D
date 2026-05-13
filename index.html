@@ -271,6 +271,58 @@
 
         const statList = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 
+        // Функция автоматического заполнения полей
+function loadCharacterData(rawJson) {
+    try {
+        const data = JSON.parse(decodeURIComponent(rawJson));
+        
+        // Основная информация
+        document.getElementById('charName').value = data.name;
+        document.getElementById('charClass').value = data.class;
+        document.getElementById('charRace').value = data.race;
+        document.getElementById('level').value = data.level;
+        document.getElementById('hp').value = data.hp;
+        document.getElementById('ac').value = data.ac;
+        document.getElementById('initiative').value = data.init;
+        document.getElementById('speed').value = data.speed;
+
+        // Характеристики (Массив из 6 значений)
+        const stats = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+        data.stats.forEach((score, i) => {
+            document.getElementById(stats[i]).value = score;
+        });
+
+        // Спасброски (Галочки)
+        data.saves.forEach((val, i) => {
+            document.getElementById(`save-${stats[i]}`).checked = (val === 'True');
+        });
+
+        // Навыки (Галочки по порядку из skillMap)
+        const skillKeys = Object.keys(skillMap);
+        data.skills.forEach((val, i) => {
+            if (skillKeys[i]) document.getElementById(`skill-${skillKeys[i]}`).checked = (val === 'True');
+        });
+
+        // Деньги
+        const coinIds = ['coin-cp', 'coin-sp', 'coin-ep', 'coin-gp', 'coin-pp'];
+        data.coins.forEach((val, i) => {
+            document.getElementById(coinIds[i]).value = val;
+        });
+
+        // Инвентарь
+        document.getElementById('inventoryText').value = data.items;
+
+    } catch (e) {
+        console.error("Ошибка загрузки данных:", e);
+    }
+}
+
+// В самом начале, где мы проверяем параметры URL, добавим вызов загрузки:
+const rawData = urlParams.get('data');
+if (rawData) {
+    loadCharacterData(rawData);
+}
+
         function updateCalculations() {
             const level = parseInt(document.getElementById('level').value) || 1;
             const pb = getPB(level);
