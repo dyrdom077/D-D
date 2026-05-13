@@ -238,6 +238,16 @@
         tg.expand();
         tg.ready();
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const charId = urlParams.get('char_id');
+        const mode = urlParams.get('mode'); // 'view' или 'edit'
+
+        if (mode === 'view') {
+            // Делаем все поля только для чтения и скрываем кнопку сохранить
+            document.querySelectorAll('input').forEach(input => input.readOnly = true);
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.disabled = true);
+            document.getElementById('saveBtn').style.display = 'none';
+        }
         // Логика вкладок
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
