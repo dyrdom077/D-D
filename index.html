@@ -239,16 +239,9 @@
         tg.ready();
 
         const urlParams = new URLSearchParams(window.location.search);
-        const charId = urlParams.get('char_id');
-        const mode = urlParams.get('mode'); // 'view' или 'edit'
+        const mode = urlParams.get('mode');
+        const rawData = urlParams.get('data');
 
-        if (mode === 'view') {
-            // Делаем все поля только для чтения и скрываем кнопку сохранить
-            document.querySelectorAll('input').forEach(input => input.readOnly = true);
-            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.disabled = true);
-            document.getElementById('saveBtn').style.display = 'none';
-        }
-        // Логика вкладок
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -260,93 +253,65 @@
         const formatNum = (num) => num > 0 ? `+${num}` : num.toString();
         const getPB = (level) => Math.ceil(level / 4) + 1;
 
-        // Полный маппинг навыков к характеристикам
         const skillMap = {
-            'athletics': 'str',
-            'acrobatics': 'dex', 'sleight': 'dex', 'stealth': 'dex',
+            'athletics': 'str', 'acrobatics': 'dex', 'sleight': 'dex', 'stealth': 'dex',
             'investigation': 'int', 'history': 'int', 'arcana': 'int', 'nature': 'int', 'religion': 'int',
             'perception': 'wis', 'survival': 'wis', 'medicine': 'wis', 'insight': 'wis', 'animal': 'wis',
             'performance': 'cha', 'intimidation': 'cha', 'deception': 'cha', 'persuasion': 'cha'
         };
-
         const statList = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 
-        // Функция автоматического заполнения полей
-function loadCharacterData(rawJson) {
-    try {
-        const data = JSON.parse(decodeURIComponent(rawJson));
-        
-        // Основная информация
-        document.getElementById('charName').value = data.name;
-        document.getElementById('charClass').value = data.class;
-        document.getElementById('charRace').value = data.race;
-        document.getElementById('level').value = data.level;
-        document.getElementById('hp').value = data.hp;
-        document.getElementById('ac').value = data.ac;
-        document.getElementById('initiative').value = data.init;
-        document.getElementById('speed').value = data.speed;
+        function loadCharacterData(rawJson) {
+            try {
+                const data = JSON.parse(decodeURIComponent(rawJson));
+                
+                document.getElementById('charName').value = data.name || '';
+                document.getElementById('charClass').value = data.class || '';
+                document.getElementById('charRace').value = data.race || '';
+                document.getElementById('level').value = data.level || 1;
+                document.getElementById('hp').value = data.hp || '';
+                document.getElementById('ac').value = data.ac || 10;
+                document.getElementById('initiative').value = data.init || '';
+                document.getElementById('speed').value = data.speed || 30;
 
-        // Характеристики (Массив из 6 значений)
-        const stats = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
-        data.stats.forEach((score, i) => {
-            document.getElementById(stats[i]).value = score;
-        });
-
-        // Спасброски (Галочки)
-        data.saves.forEach((val, i) => {
-            document.getElementById(`save-${stats[i]}`).checked = (val === 'True');
-        });
-
-        // Навыки (Галочки по порядку из skillMap)
-        const skillKeys = Object.keys(skillMap);
-        data.skills.forEach((val, i) => {
-            if (skillKeys[i]) document.getElementById(`skill-${skillKeys[i]}`).checked = (val === 'True');
-        });
-
-        // Деньги
-        const coinIds = ['coin-cp', 'coin-sp', 'coin-ep', 'coin-gp', 'coin-pp'];
-        data.coins.forEach((val, i) => {
-            document.getElementById(coinIds[i]).value = val;
-        });
-
-        // Инвентарь
-        document.getElementById('inventoryText').value = data.items;
-
-    } catch (e) {
-        console.error("Ошибка загрузки данных:", e);
-    }
-}
-
-// В самом начале, где мы проверяем параметры URL, добавим вызов загрузки:
-const rawData = urlParams.get('data');
-if (rawData) {
-    loadCharacterData(rawData);
-}
+                if (data.stats) data.stats.forEach((score, i) => document.getElementById(statList[i]).value = score || 10);
+                if (data.saves) data.saves.forEach((val, i) => document.getElementById(`save-${statList[i]}`).checked = (val === 'True'));
+                
+                const skillKeys = Object.keys(skillMap);
+                if (data.skills) data.skills.forEach((val, i) => document.getElementById(`skill-${skillKeys[i]}`).checked = (val === 'True'));
+                
+                const coinIds = ['coin-cp', 'coin-sp', 'coin-ep', 'coin-gp', 'coin-pp'];
+                if (data.coins) data.coins.forEach((val, i) => document.getElementById(coinIds[i]).value = val || 0);
+                
+                document.getElementById('inventoryText').value = data.items || '';
+                
+                if (data.init) {
+                    document.getElementById('initiative').dataset.manual = "true";
+                }
+            } catch (e) {
+                console.error("Ошибка загрузки данных:", e);
+            }
+        }
 
         function updateCalculations() {
             const level = parseInt(document.getElementById('level').value) || 1;
             const pb = getPB(level);
             document.getElementById('pb').value = formatNum(pb);
 
-            // Обрабатываем характеристики и спасброски
             statList.forEach(stat => {
                 const score = parseInt(document.getElementById(stat).value) || 10;
                 const mod = calcMod(score);
-                
                 document.getElementById(`mod-${stat}`).textContent = formatNum(mod);
 
-                // Инициатива (от Ловкости)
                 if (stat === 'dex') {
                     const initInput = document.getElementById('initiative');
                     if (!initInput.dataset.manual) initInput.value = formatNum(mod);
                 }
 
-                // Спасбросок
                 const isSaveProf = document.getElementById(`save-${stat}`).checked;
                 document.getElementById(`val-save-${stat}`).value = formatNum(mod + (isSaveProf ? pb : 0));
             });
 
-            // Навыки
             for (const [skill, stat] of Object.entries(skillMap)) {
                 const score = parseInt(document.getElementById(stat).value) || 10;
                 const mod = calcMod(score);
@@ -354,6 +319,28 @@ if (rawData) {
                 document.getElementById(`val-skill-${skill}`).value = formatNum(mod + (isProf ? pb : 0));
             }
         }
+
+        // ==========================================
+        // ПОРЯДОК ВЫПОЛНЕНИЯ (Это решает баг)
+        // ==========================================
+        
+        // 1. Сначала подтягиваем данные (если они есть)
+        if (rawData) {
+            loadCharacterData(rawData);
+        }
+
+        // 2. Затем пересчитываем модификаторы для отображения
+        updateCalculations();
+
+        // 3. И только потом "замораживаем" экран для просмотра
+        if (mode === 'view') {
+            document.querySelectorAll('input').forEach(input => input.readOnly = true);
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.disabled = true);
+            document.getElementById('inventoryText').readOnly = true; 
+            document.getElementById('saveBtn').style.display = 'none';
+        }
+
+        // ==========================================
 
         document.getElementById('initiative').addEventListener('input', function() {
             this.dataset.manual = "true";
@@ -364,12 +351,7 @@ if (rawData) {
             el.addEventListener('change', updateCalculations);
         });
 
-        updateCalculations();
-
-        // СБОР ДАННЫХ ПЕРЕД ОТПРАВКОЙ В БОТ (Упаковка в JSON)
         document.getElementById('saveBtn').addEventListener('click', () => {
-            
-            // Собираем статы в красивый объект
             const characterStats = {};
             statList.forEach(stat => {
                 characterStats[stat] = {
@@ -378,13 +360,11 @@ if (rawData) {
                 };
             });
 
-            // Собираем навыки
             const characterSkills = {};
             for (const skill in skillMap) {
                 characterSkills[skill] = document.getElementById(`skill-${skill}`).checked;
             }
 
-            // Собираем монеты
             const coins = {
                 cp: document.getElementById('coin-cp').value,
                 sp: document.getElementById('coin-sp').value,
@@ -405,10 +385,7 @@ if (rawData) {
                 speed: document.getElementById('speed').value,
                 stats: characterStats,
                 skills: characterSkills,
-                inventory: {
-                    coins: coins,
-                    items: document.getElementById('inventoryText').value
-                }
+                inventory: { coins: coins, items: document.getElementById('inventoryText').value }
             };
 
             if (!charData.name) {
