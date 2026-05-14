@@ -241,6 +241,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const mode = urlParams.get('mode');
         const rawData = urlParams.get('data');
+        const charId = urlParams.get('char_id');
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
