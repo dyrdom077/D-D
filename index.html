@@ -338,10 +338,14 @@ function recalcSkills(block) {
 }
 
 function recalcAll() {
+  const profBonusEl = document.getElementById('prof-bonus');
+  if (profBonusEl) profBonusEl.value = formatMod(getPB());
+
   document.querySelectorAll('.ability-block').forEach(b => {
     b.querySelector('.mod-display').value = formatMod(calcMod(parseInt(b.querySelector('.score-input').value)||10));
     recalcSkills(b);
   });
+  
   const wisMod = calcMod(parseInt(document.getElementById('wis').value)||10);
   const percEl = document.getElementById('skill-perception');
   let percBonus = 0;
