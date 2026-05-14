@@ -105,7 +105,7 @@
   .shield-shape { 
     width: 46px; height: 52px; background: var(--surface); 
     border: 2px solid var(--border); 
-    border-radius: 4px 4px 22px 22px; /* Форма щита рамками! */
+    border-radius: 4px 4px 22px 22px; 
     display: flex; flex-direction: column; align-items: center; justify-content: center; 
     box-shadow: inset 0 1px 3px var(--shadow); 
     flex-shrink: 0;
@@ -136,6 +136,7 @@
   .weapons-table { width: 100%; border-collapse: collapse; }
   .weapons-table th { font-family: 'Cinzel', serif; font-size: 8px; color: var(--text-label); text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--border-light); font-weight: 400; text-transform: uppercase; }
   .weapons-table td { padding: 2px 4px; border-bottom: 1px solid var(--border-light); }
+  .weapons-table td input { font-size: 11px; width: 100%; }
 
   .text-block { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
   .text-block-header { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; background: var(--bg); border-bottom: 1px solid var(--border); }
@@ -149,12 +150,12 @@
   .equip-diamond { width: 12px; height: 12px; border: 1.5px solid var(--border); transform: rotate(45deg); flex-shrink: 0; }
   .equip-item.checked .equip-diamond { background: var(--accent); border-color: var(--accent); }
 
-  .btn-sm { font-family: 'Cinzel', serif; font-size: 14px; line-height: 1; width: 22px; height: 22px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; color: var(--accent); }
+  .btn-sm { font-family: 'Cinzel', serif; font-size: 14px; line-height: 1; width: 22px; height: 22px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; color: var(--accent); display: flex; align-items: center; justify-content: center;}
   .title-bar { text-align: center; padding: 4px 0; position: relative; margin-bottom: 10px; }
   .title-bar h1 { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; letter-spacing: 0.2em; color: var(--accent); display: inline; background: var(--bg); padding: 0 10px; }
   .save-btn { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; border: none; padding: 14px 28px; border-radius: 8px; font-family: 'Cinzel', serif; font-size: 16px; font-weight: bold; text-transform: uppercase; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000; cursor: pointer; }
 
-  /* ─── ИДЕАЛЬНАЯ МОБИЛЬНАЯ АДАПТАЦИЯ ─── */
+  /* ─── ИДЕАЛЬНАЯ МОБИЛЬНАЯ АДАПТАЦИЯ (ПЛИТКА) ─── */
   @media (max-width: 768px) {
     .main-grid { display: flex; flex-direction: column; }
     .right-top-grid { display: flex; flex-direction: column; }
@@ -168,7 +169,7 @@
     .stats-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; justify-items: center; }
     .ability-block { width: 100%; max-width: 170px; }
     
-    /* Истощение и вдохновение по центру, не на весь экран */
+    /* Истощение и вдохновение по центру */
     .exhaust-insp-wrapper { display: flex; justify-content: center; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }
     .exhaust-insp-wrapper .block { min-width: 140px; }
     
@@ -296,7 +297,7 @@ const mode = urlParams.get('mode'); const rawData = urlParams.get('data'); const
 const statList = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 const skillMap = {'athletics': 'str', 'acrobatics': 'dex', 'sleight': 'dex', 'stealth': 'dex', 'investigation': 'int', 'history': 'int', 'arcana': 'int', 'nature': 'int', 'religion': 'int', 'perception': 'wis', 'survival': 'wis', 'medicine': 'wis', 'insight': 'wis', 'animal': 'wis', 'performance': 'cha', 'intimidation': 'cha', 'deception': 'cha', 'persuasion': 'cha'};
 
-// ── ФУНКЦИЯ ДЛЯ 3 СОСТОЯНИЙ НАВЫКА (Пусто -> Владение -> Компетентность) ──
+// ФУНКЦИЯ ДЛЯ 3 СОСТОЯНИЙ НАВЫКА (Пусто -> Владение -> Компетентность)
 function toggleSkill(el) {
   if (mode === 'view') return;
   if (!el.classList.contains('checked') && !el.classList.contains('expertise')) {
@@ -330,7 +331,7 @@ function recalcSkills(block) {
     if (check && val) {
       const isExp = check.classList.contains('expertise');
       const isProf = check.classList.contains('checked');
-      // ПРИБАВЛЯЕМ УДВОЕННЫЙ БОНУС ДЛЯ ЭКСПЕРТИЗЫ
+      // ПРИБАВЛЯЕМ УДВОЕННЫЙ БОНУС ДЛЯ КОМПЕТЕНТНОСТИ
       const total = mod + (isExp ? pb * 2 : (isProf ? pb : 0));
       val.value = formatMod(total);
     }
@@ -366,15 +367,27 @@ function addWeapon() {
 }
 function removeWeapon() { const tbody = document.getElementById('weapons-body'); if(tbody.rows.length>1) tbody.deleteRow(-1); }
 
-// ЗАГРУЗКА ДАННЫХ
+// ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ (ТЕПЕРЬ ВСЕ ПОЛЯ ЗАГРУЖАЮТСЯ ИДЕАЛЬНО)
 function loadCharacterData(rawJson) {
     try {
         const d = JSON.parse(decodeURIComponent(rawJson));
-        ['charName','charBackground','charRace','level','charClass','charSubclass','charAlignment','ac','hp-current','hp-max','hp-temp','hd-dice','hd-current','hd-max','initiative','speed','conditions','class-features','racial-traits','feats','tools-languages','inventoryText'].forEach(id => {
-            if(document.getElementById(id)) document.getElementById(id).value = d[id] || '';
+        
+        // Маппинг для старых ключей из Python
+        if (document.getElementById('charName')) document.getElementById('charName').value = d.name || '';
+        if (document.getElementById('charClass')) document.getElementById('charClass').value = d.class || '';
+        if (document.getElementById('charRace')) document.getElementById('charRace').value = d.race || '';
+        if (document.getElementById('initiative')) document.getElementById('initiative').value = d.init || d.initiative || '';
+        if (document.getElementById('inventoryText')) document.getElementById('inventoryText').value = d.items || d.inventoryText || '';
+
+        // Прямой маппинг для новых ключей
+        ['charBackground', 'charSubclass', 'charAlignment', 'level', 'ac', 'hp-current', 'hp-max', 'hp-temp', 'hd-dice', 'hd-current', 'hd-max', 'speed', 'conditions', 'class-features', 'racial-traits', 'feats', 'tools-languages'].forEach(id => {
+            if (document.getElementById(id) && d[id] !== undefined) {
+                document.getElementById(id).value = d[id];
+            }
         });
-        if(d.stats) statList.forEach((s,i) => document.getElementById(s).value = d.stats[i] || 10);
-        if(d.saves) statList.forEach((s,i) => { if(d.saves[i]==='True') document.getElementById(`save-${s}`).classList.add('checked'); });
+
+        if(d.stats) statList.forEach((s,i) => { if(document.getElementById(s)) document.getElementById(s).value = d.stats[i] || 10; });
+        if(d.saves) statList.forEach((s,i) => { if(d.saves[i]==='True' && document.getElementById(`save-${s}`)) document.getElementById(`save-${s}`).classList.add('checked'); });
         
         if(d.skills) Object.keys(skillMap).forEach((s,i) => { 
             const el = document.getElementById(`skill-${s}`);
@@ -384,24 +397,31 @@ function loadCharacterData(rawJson) {
             }
         });
         
-        if(d.coins) ['coin-cp','coin-sp','coin-ep','coin-gp','coin-pp'].forEach((id,i) => document.getElementById(id).value = d.coins[i] || 0);
+        if(d.coins) ['coin-cp','coin-sp','coin-ep','coin-gp','coin-pp'].forEach((id,i) => { if(document.getElementById(id)) document.getElementById(id).value = d.coins[i] || 0; });
         if(d.exhaustion) { const bx = document.querySelectorAll('.exhaust-box'); for(let i=0; i<parseInt(d.exhaustion); i++) if(bx[i]) bx[i].classList.add('checked'); }
-        if(d.inspiration === 'True') document.getElementById('inspiration').classList.add('checked');
+        if(d.inspiration === 'True') { const insp = document.getElementById('inspiration'); if (insp) insp.classList.add('checked'); }
         if(d.death_saves) {
            const sC = document.querySelectorAll('.death-row')[0].querySelectorAll('.diamond-check'); for(let i=0; i<d.death_saves.success; i++) if(sC[i]) sC[i].classList.add('checked');
            const fC = document.querySelectorAll('.death-row')[1].querySelectorAll('.diamond-check'); for(let i=0; i<d.death_saves.fail; i++) if(fC[i]) fC[i].classList.add('checked');
         }
         if(d.equip_profs) document.querySelectorAll('.equip-item').forEach(el => { if(d.equip_profs[el.dataset.eq]) el.classList.add('checked'); });
+        
         if(d.weapons && d.weapons.length > 0) {
-            const tb = document.getElementById('weapons-body'); tb.innerHTML = '';
-            d.weapons.forEach(w => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td><input type="text" value="${w.n}"></td><td><input type="text" value="${w.b}"></td><td><input type="text" value="${w.d}"></td><td><input type="text" value="${w.nt}"></td>`;
-                tb.appendChild(tr);
-            });
+            const tb = document.getElementById('weapons-body'); 
+            if(tb) {
+                tb.innerHTML = '';
+                d.weapons.forEach(w => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td><input type="text" value="${w.n || ''}"></td><td><input type="text" value="${w.b || ''}"></td><td><input type="text" value="${w.d || ''}"></td><td><input type="text" value="${w.nt || ''}"></td>`;
+                    tb.appendChild(tr);
+                });
+            }
         }
-        if(d['initiative']) document.getElementById('initiative').dataset.manual = "true";
-    } catch(e) {}
+        if(d.init || d.initiative) {
+            const initEl = document.getElementById('initiative');
+            if (initEl) initEl.dataset.manual = "true";
+        }
+    } catch(e) { console.error("Ошибка загрузки:", e); }
 }
 
 if (rawData) loadCharacterData(rawData);
