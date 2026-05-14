@@ -58,7 +58,6 @@
   .main-grid { display: grid; grid-template-columns: 150px 1fr; gap: 8px; }
   .left-col { display: flex; flex-direction: column; gap: 8px; }
   .stats-wrapper { display: flex; flex-direction: column; gap: 8px; }
-  .exhaust-insp-wrapper { display: flex; flex-direction: column; gap: 8px; }
 
   .prof-block { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 8px 8px; text-align: center; position: relative; }
   .prof-block .block-header { top: -8px; }
@@ -76,10 +75,11 @@
   .skill-list { width: 100%; display: flex; flex-direction: column; gap: 2px; }
   .skill-row { display: flex; align-items: center; gap: 4px; padding: 1px 0; }
   .skill-check { width: 13px; height: 13px; border: 1.5px solid var(--border); border-radius: 50%; flex-shrink: 0; cursor: pointer; transition: background 0.15s, border-color 0.15s; display: flex; align-items: center; justify-content: center; }
+  
   .skill-check.checked { background: var(--checked-bg); border-color: var(--checked-bg); }
   .skill-check.checked::after { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #fff; }
   
-  /* СТИЛЬ ДЛЯ КОМПЕТЕНТНОСТИ (ДВОЙНОЕ НАЖАТИЕ) */
+  /* КОМПЕТЕНТНОСТЬ (ДВОЙНОЕ НАЖАТИЕ) */
   .skill-check.expertise { background: var(--checked-bg); border-color: var(--checked-bg); }
   .skill-check.expertise::after { content: 'К'; color: #fff; font-size: 9px; font-family: 'Crimson Pro', sans-serif; font-weight: bold; background: none; width: auto; height: auto; border-radius: 0; line-height: 1; }
 
@@ -100,9 +100,17 @@
   
   .combat-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 8px; align-items: start; }
   .ac-shield { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  /* ИСПРАВЛЕННЫЙ ЩИТ (без clip-path, работает везде) */
-  .shield-shape { width: 50px; height: 56px; background: var(--surface); border: 2px solid var(--border); border-radius: 6px 6px 25px 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: inset 0 1px 3px var(--shadow); }
-  .shield-shape input { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--accent); width: 40px; text-align: center; }
+  
+  /* ИДЕАЛЬНЫЙ ЩИТ БЕЗ CLIP-PATH */
+  .shield-shape { 
+    width: 46px; height: 52px; background: var(--surface); 
+    border: 2px solid var(--border); 
+    border-radius: 4px 4px 22px 22px; /* Форма щита рамками! */
+    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    box-shadow: inset 0 1px 3px var(--shadow); 
+    flex-shrink: 0;
+  }
+  .shield-shape input { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--accent); width: 38px; text-align: center; }
 
   .hp-block { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 8px 8px; position: relative; flex: 1; }
   .hp-main-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; justify-content: center; }
@@ -146,7 +154,7 @@
   .title-bar h1 { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; letter-spacing: 0.2em; color: var(--accent); display: inline; background: var(--bg); padding: 0 10px; }
   .save-btn { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; border: none; padding: 14px 28px; border-radius: 8px; font-family: 'Cinzel', serif; font-size: 16px; font-weight: bold; text-transform: uppercase; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000; cursor: pointer; }
 
-  /* ─── ИДЕАЛЬНАЯ МОБИЛЬНАЯ АДАПТАЦИЯ (ПЛИТКА) ─── */
+  /* ─── ИДЕАЛЬНАЯ МОБИЛЬНАЯ АДАПТАЦИЯ ─── */
   @media (max-width: 768px) {
     .main-grid { display: flex; flex-direction: column; }
     .right-top-grid { display: flex; flex-direction: column; }
@@ -156,18 +164,20 @@
     .header-fields-left, .header-fields-right { width: 100%; }
     .level-circle { order: -1; margin-bottom: 10px; }
     
-    /* Плитка для характеристик */
-    .stats-wrapper { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
-    .exhaust-insp-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } /* Вдохновение и истощение рядом! */
+    /* Сетка в две колонки для характеристик */
+    .stats-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; justify-items: center; }
+    .ability-block { width: 100%; max-width: 170px; }
     
-    .combat-row { grid-template-columns: 1fr 1fr; align-items: center; }
-    .ac-shield { grid-column: 1; justify-self: center; }
-    .hp-block { grid-column: 2; }
-    .hitdice-block { grid-column: 1; }
-    .death-block { grid-column: 2; }
+    /* Истощение и вдохновение по центру, не на весь экран */
+    .exhaust-insp-wrapper { display: flex; justify-content: center; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }
+    .exhaust-insp-wrapper .block { min-width: 140px; }
+    
+    .combat-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+    .hp-block { width: 100%; }
+    .ac-shield, .hitdice-block, .death-block { width: 45%; max-width: 150px; }
     
     .stats-row { grid-template-columns: 1fr 1fr; }
-    .status-box { grid-column: span 2; } /* Поле "состояния" на всю ширину */
+    .status-box { grid-column: span 2; }
   }
 </style>
 </head>
@@ -286,18 +296,19 @@ const mode = urlParams.get('mode'); const rawData = urlParams.get('data'); const
 const statList = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 const skillMap = {'athletics': 'str', 'acrobatics': 'dex', 'sleight': 'dex', 'stealth': 'dex', 'investigation': 'int', 'history': 'int', 'arcana': 'int', 'nature': 'int', 'religion': 'int', 'perception': 'wis', 'survival': 'wis', 'medicine': 'wis', 'insight': 'wis', 'animal': 'wis', 'performance': 'cha', 'intimidation': 'cha', 'deception': 'cha', 'persuasion': 'cha'};
 
-// ── НОВАЯ ФУНКЦИЯ: 3 СОСТОЯНИЯ ДЛЯ НАВЫКОВ (КОМПЕТЕНТНОСТЬ) ──
+// ── ФУНКЦИЯ ДЛЯ 3 СОСТОЯНИЙ НАВЫКА (Пусто -> Владение -> Компетентность) ──
 function toggleSkill(el) {
   if (mode === 'view') return;
   if (!el.classList.contains('checked') && !el.classList.contains('expertise')) {
-    el.classList.add('checked'); // 1 клик: Владение
+    el.classList.add('checked');
   } else if (el.classList.contains('checked')) {
     el.classList.remove('checked');
-    el.classList.add('expertise'); // 2 клик: Компетентность (К)
+    el.classList.add('expertise');
   } else {
-    el.classList.remove('expertise'); // 3 клик: Сброс
+    el.classList.remove('expertise');
   }
   recalcSkills(el.closest('.ability-block'));
+  if (el.id === 'skill-perception') recalcAll(); // Пересчет пассивного восприятия
 }
 
 // Обычный чекбокс (Спасброски, смерти, снаряжение)
@@ -305,6 +316,7 @@ function toggleCheck(el) {
   if (mode === 'view') return; el.classList.toggle('checked');
   if (el.classList.contains('skill-check')) recalcSkills(el.closest('.ability-block'));
 }
+
 function calcMod(s) { return Math.floor((s - 10) / 2); }
 function formatMod(m) { return (m >= 0 ? '+' : '') + m; }
 function getPB() { return Math.ceil((parseInt(document.getElementById('level').value)||1) / 4) + 1; }
@@ -314,25 +326,33 @@ function recalcSkills(block) {
   const pb = getPB();
   block.querySelectorAll('.skill-row').forEach(row => {
     const check = row.querySelector('.skill-check');
-    const isExp = check && check.classList.contains('expertise');
-    const isProf = check && check.classList.contains('checked');
-    // Удвоенный бонус мастерства для Компетентности!
-    const total = mod + (isExp ? pb * 2 : (isProf ? pb : 0));
-    row.querySelector('.skill-computed').value = formatMod(total);
+    const val = row.querySelector('.skill-computed');
+    if (check && val) {
+      const isExp = check.classList.contains('expertise');
+      const isProf = check.classList.contains('checked');
+      // ПРИБАВЛЯЕМ УДВОЕННЫЙ БОНУС ДЛЯ ЭКСПЕРТИЗЫ
+      const total = mod + (isExp ? pb * 2 : (isProf ? pb : 0));
+      val.value = formatMod(total);
+    }
   });
 }
+
 function recalcAll() {
   document.querySelectorAll('.ability-block').forEach(b => {
     b.querySelector('.mod-display').value = formatMod(calcMod(parseInt(b.querySelector('.score-input').value)||10));
     recalcSkills(b);
   });
   const wisMod = calcMod(parseInt(document.getElementById('wis').value)||10);
-  const isPercExp = document.getElementById('skill-perception').classList.contains('expertise');
-  const isPercProf = document.getElementById('skill-perception').classList.contains('checked');
-  document.getElementById('passive-perception').value = 10 + wisMod + (isPercExp ? getPB()*2 : (isPercProf ? getPB() : 0));
+  const percEl = document.getElementById('skill-perception');
+  let percBonus = 0;
+  if (percEl) {
+    if (percEl.classList.contains('expertise')) percBonus = getPB() * 2;
+    else if (percEl.classList.contains('checked')) percBonus = getPB();
+  }
+  document.getElementById('passive-perception').value = 10 + wisMod + percBonus;
   
   const initEl = document.getElementById('initiative');
-  if (!initEl.dataset.manual) initEl.value = formatMod(calcMod(parseInt(document.getElementById('dex').value)||10));
+  if (initEl && !initEl.dataset.manual) initEl.value = formatMod(calcMod(parseInt(document.getElementById('dex').value)||10));
 }
 
 document.querySelectorAll('.score-input').forEach(i => i.addEventListener('input', recalcAll));
@@ -356,11 +376,12 @@ function loadCharacterData(rawJson) {
         if(d.stats) statList.forEach((s,i) => document.getElementById(s).value = d.stats[i] || 10);
         if(d.saves) statList.forEach((s,i) => { if(d.saves[i]==='True') document.getElementById(`save-${s}`).classList.add('checked'); });
         
-        // ЗАГРУЗКА НАВЫКОВ И КОМПЕТЕНТНОСТИ
         if(d.skills) Object.keys(skillMap).forEach((s,i) => { 
             const el = document.getElementById(`skill-${s}`);
-            if(d.skills[i] === 'True') el.classList.add('checked'); 
-            else if(d.skills[i] === 'Exp') el.classList.add('expertise');
+            if(el) {
+              if(d.skills[i] === 'True') el.classList.add('checked'); 
+              else if(d.skills[i] === 'Exp') el.classList.add('expertise');
+            }
         });
         
         if(d.coins) ['coin-cp','coin-sp','coin-ep','coin-gp','coin-pp'].forEach((id,i) => document.getElementById(id).value = d.coins[i] || 0);
@@ -396,7 +417,6 @@ document.getElementById('saveBtn').addEventListener('click', () => {
     try {
         const characterStats = {}; statList.forEach(s => characterStats[s] = {score: parseInt(document.getElementById(s).value)||10, saveProf: document.getElementById(`save-${s}`).classList.contains('checked')} );
         
-        // СОХРАНЕНИЕ НАВЫКОВ И КОМПЕТЕНТНОСТИ ('Exp', 'True', 'False')
         const characterSkills = {}; 
         for (const s in skillMap) {
             const el = document.getElementById(`skill-${s}`);
