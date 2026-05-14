@@ -290,7 +290,7 @@
                     document.getElementById('initiative').dataset.manual = "true";
                 }
             } catch (e) {
-                console.error("Ошибка загрузки данных:", e);
+                tg.showAlert("Ошибка чтения данных таблицы!");
             }
         }
 
@@ -321,27 +321,18 @@
             }
         }
 
-        // ==========================================
-        // ПОРЯДОК ВЫПОЛНЕНИЯ (Это решает баг)
-        // ==========================================
-        
-        // 1. Сначала подтягиваем данные (если они есть)
         if (rawData) {
             loadCharacterData(rawData);
         }
 
-        // 2. Затем пересчитываем модификаторы для отображения
         updateCalculations();
 
-        // 3. И только потом "замораживаем" экран для просмотра
         if (mode === 'view') {
             document.querySelectorAll('input').forEach(input => input.readOnly = true);
             document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.disabled = true);
             document.getElementById('inventoryText').readOnly = true; 
             document.getElementById('saveBtn').style.display = 'none';
         }
-
-        // ==========================================
 
         document.getElementById('initiative').addEventListener('input', function() {
             this.dataset.manual = "true";
@@ -353,51 +344,54 @@
         });
 
         document.getElementById('saveBtn').addEventListener('click', () => {
-            const characterStats = {};
-            statList.forEach(stat => {
-                characterStats[stat] = {
-                    score: parseInt(document.getElementById(stat).value) || 10,
-                    saveProf: document.getElementById(`save-${stat}`).checked
+            try {
+                const characterStats = {};
+                statList.forEach(stat => {
+                    characterStats[stat] = {
+                        score: parseInt(document.getElementById(stat).value) || 10,
+                        saveProf: document.getElementById(`save-${stat}`).checked
+                    };
+                });
+
+                const characterSkills = {};
+                for (const skill in skillMap) {
+                    characterSkills[skill] = document.getElementById(`skill-${skill}`).checked;
+                }
+
+                const coins = {
+                    cp: document.getElementById('coin-cp').value,
+                    sp: document.getElementById('coin-sp').value,
+                    ep: document.getElementById('coin-ep').value,
+                    gp: document.getElementById('coin-gp').value,
+                    pp: document.getElementById('coin-pp').value
                 };
-            });
 
-            const characterSkills = {};
-            for (const skill in skillMap) {
-                characterSkills[skill] = document.getElementById(`skill-${skill}`).checked;
+                const charData = { 
+                    action: charId ? 'edit_char' : 'save_char', 
+                    char_id: charId,
+                    name: document.getElementById('charName').value,
+                    class: document.getElementById('charClass').value,
+                    race: document.getElementById('charRace').value,
+                    level: document.getElementById('level').value,
+                    hp: document.getElementById('hp').value,
+                    ac: document.getElementById('ac').value,
+                    initiative: document.getElementById('initiative').value,
+                    speed: document.getElementById('speed').value,
+                    stats: characterStats,
+                    skills: characterSkills,
+                    inventory: { coins: coins, items: document.getElementById('inventoryText').value }
+                };
+
+                if (!charData.name) {
+                    tg.showAlert("Имя персонажа обязательно!");
+                    return;
+                }
+
+                tg.sendData(JSON.stringify(charData));
+                tg.close();
+            } catch (err) {
+                tg.showAlert("Критическая ошибка сохранения: " + err.message);
             }
-
-            const coins = {
-                cp: document.getElementById('coin-cp').value,
-                sp: document.getElementById('coin-sp').value,
-                ep: document.getElementById('coin-ep').value,
-                gp: document.getElementById('coin-gp').value,
-                pp: document.getElementById('coin-pp').value
-            };
-
-            const charData = {
-                action: charId ? 'edit_char' : 'save_char',
-                char_id: charId,
-                action: 'save_char', 
-                name: document.getElementById('charName').value,
-                class: document.getElementById('charClass').value,
-                race: document.getElementById('charRace').value,
-                level: document.getElementById('level').value,
-                hp: document.getElementById('hp').value,
-                ac: document.getElementById('ac').value,
-                initiative: document.getElementById('initiative').value,
-                speed: document.getElementById('speed').value,
-                stats: characterStats,
-                skills: characterSkills,
-                inventory: { coins: coins, items: document.getElementById('inventoryText').value }
-            };
-
-            if (!charData.name) {
-                tg.showAlert("Имя персонажа обязательно!");
-                return;
-            }
-
-            tg.sendData(JSON.stringify(charData));
-            tg.close();
         });
     </script>
 </body>
