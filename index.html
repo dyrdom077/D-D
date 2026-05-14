@@ -485,7 +485,7 @@ document.getElementById('saveBtn').addEventListener('click', () => {
         const payloadString = JSON.stringify(charData);
         
         // 1. ПРОВЕРКА ЛИМИТА ТЕЛЕГРАМА (4096 байт)
-        if (payloadString.length > 4000) {
+       if (new TextEncoder().encode(payloadString).length > 4096) {
             tg.showAlert("Слишком много текста! Телеграм не может передать такой объем. Удали часть описания способностей или инвентаря. Размер: " + payloadString.length);
             return;
         }
