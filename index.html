@@ -373,7 +373,9 @@
                 pp: document.getElementById('coin-pp').value
             };
 
-            const charData = { 
+            const charData = {
+                action: charId ? 'edit_char' : 'save_char',
+                char_id: charId,
                 action: 'save_char', 
                 name: document.getElementById('charName').value,
                 class: document.getElementById('charClass').value,
