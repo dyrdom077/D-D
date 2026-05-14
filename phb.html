@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Книга Игрока (PHB)</title>
+    <title>D&D Nexus - PHB</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -12,30 +12,32 @@
         
         .close-btn {
             position: absolute;
-            bottom: 20px;
+            bottom: 25px;
             left: 50%;
             transform: translateX(-50%);
             background: #d4af37;
             color: #000;
             border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 14px 28px;
+            border-radius: 10px;
             font-weight: bold;
             text-transform: uppercase;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
             z-index: 100;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
 
-    <iframe src="https://drive.google.com/file/d/1WhQY3_3Cl7MTCFauAJTXaH7LW1WREPtX/view?usp=drive_link/preview"></iframe>
+    <iframe src="https://docs.google.com/viewer?url=https://drive.google.com/uc?export=download&id=1WhQY3_3Cl7MTCFauAJTXaH7LW1WREPtX&embedded=true"></iframe>
 
     <button class="close-btn" onclick="Telegram.WebApp.close()">Закрыть книгу</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        tg.ready();
     </script>
 </body>
 </html>
