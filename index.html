@@ -312,7 +312,7 @@ function toggleSkill(el) {
   if (el.id === 'skill-perception') recalcAll(); // Пересчет пассивного восприятия
 }
 
-// Обычный чекбокс (Спасброски, смерти, снаряжение)
+// Обычный чекбокс
 function toggleCheck(el) {
   if (mode === 'view') return; el.classList.toggle('checked');
   if (el.classList.contains('skill-check')) recalcSkills(el.closest('.ability-block'));
@@ -331,7 +331,6 @@ function recalcSkills(block) {
     if (check && val) {
       const isExp = check.classList.contains('expertise');
       const isProf = check.classList.contains('checked');
-      // ПРИБАВЛЯЕМ УДВОЕННЫЙ БОНУС ДЛЯ КОМПЕТЕНТНОСТИ
       const total = mod + (isExp ? pb * 2 : (isProf ? pb : 0));
       val.value = formatMod(total);
     }
@@ -367,19 +366,18 @@ function addWeapon() {
 }
 function removeWeapon() { const tbody = document.getElementById('weapons-body'); if(tbody.rows.length>1) tbody.deleteRow(-1); }
 
-// ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ (ТЕПЕРЬ ВСЕ ПОЛЯ ЗАГРУЖАЮТСЯ ИДЕАЛЬНО)
+// ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ С СИСТЕМОЙ УВЕДОМЛЕНИЙ ОБ ОШИБКАХ
 function loadCharacterData(rawJson) {
+    if (!rawJson) return;
     try {
         const d = JSON.parse(decodeURIComponent(rawJson));
         
-        // Маппинг для старых ключей из Python
         if (document.getElementById('charName')) document.getElementById('charName').value = d.name || '';
         if (document.getElementById('charClass')) document.getElementById('charClass').value = d.class || '';
         if (document.getElementById('charRace')) document.getElementById('charRace').value = d.race || '';
         if (document.getElementById('initiative')) document.getElementById('initiative').value = d.init || d.initiative || '';
         if (document.getElementById('inventoryText')) document.getElementById('inventoryText').value = d.items || d.inventoryText || '';
 
-        // Прямой маппинг для новых ключей
         ['charBackground', 'charSubclass', 'charAlignment', 'level', 'ac', 'hp-current', 'hp-max', 'hp-temp', 'hd-dice', 'hd-current', 'hd-max', 'speed', 'conditions', 'class-features', 'racial-traits', 'feats', 'tools-languages'].forEach(id => {
             if (document.getElementById(id) && d[id] !== undefined) {
                 document.getElementById(id).value = d[id];
@@ -421,10 +419,18 @@ function loadCharacterData(rawJson) {
             const initEl = document.getElementById('initiative');
             if (initEl) initEl.dataset.manual = "true";
         }
-    } catch(e) { console.error("Ошибка загрузки:", e); }
+    } catch(e) { 
+        tg.showAlert("Критическая ошибка: бот передал сломанные данные! Причина: " + e.message); 
+    }
 }
 
-if (rawData) loadCharacterData(rawData);
+// ПРОВЕРКА НАЛИЧИЯ ДАННЫХ ПРИ ОТКРЫТИИ
+if (rawData) {
+    loadCharacterData(rawData);
+} else if (mode === 'edit' || mode === 'view') {
+    tg.showAlert("Внимание: Бот не передал данные персонажа в ссылку! Открыт чистый лист.");
+}
+
 recalcAll();
 
 if (mode === 'view') {
