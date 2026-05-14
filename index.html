@@ -58,6 +58,7 @@
   .main-grid { display: grid; grid-template-columns: 150px 1fr; gap: 8px; }
   .left-col { display: flex; flex-direction: column; gap: 8px; }
   .stats-wrapper { display: flex; flex-direction: column; gap: 8px; }
+  .exhaust-insp-wrapper { display: flex; flex-direction: column; gap: 8px; }
 
   .prof-block { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 8px 8px; text-align: center; position: relative; }
   .prof-block .block-header { top: -8px; }
@@ -77,6 +78,11 @@
   .skill-check { width: 13px; height: 13px; border: 1.5px solid var(--border); border-radius: 50%; flex-shrink: 0; cursor: pointer; transition: background 0.15s, border-color 0.15s; display: flex; align-items: center; justify-content: center; }
   .skill-check.checked { background: var(--checked-bg); border-color: var(--checked-bg); }
   .skill-check.checked::after { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #fff; }
+  
+  /* СТИЛЬ ДЛЯ КОМПЕТЕНТНОСТИ (ДВОЙНОЕ НАЖАТИЕ) */
+  .skill-check.expertise { background: var(--checked-bg); border-color: var(--checked-bg); }
+  .skill-check.expertise::after { content: 'К'; color: #fff; font-size: 9px; font-family: 'Crimson Pro', sans-serif; font-weight: bold; background: none; width: auto; height: auto; border-radius: 0; line-height: 1; }
+
   .skill-name { font-size: 10px; color: var(--text-muted); flex: 1; cursor: default; }
   .skill-val { width: 24px; height: 16px; border-bottom: 1px solid var(--border-light); text-align: center; }
   .skill-val input { font-size: 10px; width: 22px; color: var(--accent); }
@@ -90,10 +96,12 @@
 
   .right-col { display: flex; flex-direction: column; gap: 8px; }
   .right-top-grid { display: grid; grid-template-columns: 150px 1fr; gap: 8px; }
+  .right-inner-col { display: flex; flex-direction: column; gap: 8px; }
   
   .combat-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 8px; align-items: start; }
   .ac-shield { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .shield-shape { width: 52px; height: 58px; background: var(--surface); border: 2px solid var(--border); clip-path: polygon(10% 0%, 90% 0%, 100% 15%, 100% 60%, 50% 100%, 0% 60%, 0% 15%); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  /* ИСПРАВЛЕННЫЙ ЩИТ (без clip-path, работает везде) */
+  .shield-shape { width: 50px; height: 56px; background: var(--surface); border: 2px solid var(--border); border-radius: 6px 6px 25px 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: inset 0 1px 3px var(--shadow); }
   .shield-shape input { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--accent); width: 40px; text-align: center; }
 
   .hp-block { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 8px 8px; position: relative; flex: 1; }
@@ -136,21 +144,30 @@
   .btn-sm { font-family: 'Cinzel', serif; font-size: 14px; line-height: 1; width: 22px; height: 22px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; color: var(--accent); }
   .title-bar { text-align: center; padding: 4px 0; position: relative; margin-bottom: 10px; }
   .title-bar h1 { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; letter-spacing: 0.2em; color: var(--accent); display: inline; background: var(--bg); padding: 0 10px; }
-
   .save-btn { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; border: none; padding: 14px 28px; border-radius: 8px; font-family: 'Cinzel', serif; font-size: 16px; font-weight: bold; text-transform: uppercase; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000; cursor: pointer; }
 
   /* ─── ИДЕАЛЬНАЯ МОБИЛЬНАЯ АДАПТАЦИЯ (ПЛИТКА) ─── */
   @media (max-width: 768px) {
-    .main-grid, .right-top-grid, .bottom-grid { grid-template-columns: 1fr; }
+    .main-grid { display: flex; flex-direction: column; }
+    .right-top-grid { display: flex; flex-direction: column; }
+    .bottom-grid { grid-template-columns: 1fr; }
+    
     .header-section { grid-template-columns: 1fr; justify-items: center; text-align: center; }
     .header-fields-left, .header-fields-right { width: 100%; }
     .level-circle { order: -1; margin-bottom: 10px; }
     
     /* Плитка для характеристик */
     .stats-wrapper { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
-    .combat-row { grid-template-columns: 1fr 1fr; flex-wrap: wrap; }
-    .hp-block { grid-column: span 2; }
+    .exhaust-insp-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } /* Вдохновение и истощение рядом! */
+    
+    .combat-row { grid-template-columns: 1fr 1fr; align-items: center; }
+    .ac-shield { grid-column: 1; justify-self: center; }
+    .hp-block { grid-column: 2; }
+    .hitdice-block { grid-column: 1; }
+    .death-block { grid-column: 2; }
+    
     .stats-row { grid-template-columns: 1fr 1fr; }
+    .status-box { grid-column: span 2; } /* Поле "состояния" на всю ширину */
   }
 </style>
 </head>
@@ -181,24 +198,26 @@
       <div class="prof-block"><div class="block-header"><span class="block-title">Бонус владения</span></div><div class="prof-value"><input type="text" id="prof-bonus" value="+2" readonly></div></div>
       
       <div class="stats-wrapper">
-        <div class="ability-block" data-ability="str"><div class="block-header"><span class="block-title">Сила</span></div><div class="ability-scores"><div class="modifier-box"><input type="text" class="mod-display" value="+0" readonly></div><div class="score-box"><input type="number" id="str" class="score-input calc-trigger" value="10"></div></div><div class="skill-list"><div class="skill-row"><div class="skill-check" id="save-str" onclick="toggleCheck(this)"></div><span class="skill-name">Спасбросок</span><div class="skill-val"><input type="text" id="val-save-str" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-athletics" onclick="toggleCheck(this)"></div><span class="skill-name">Атлетика</span><div class="skill-val"><input type="text" id="val-skill-athletics" class="skill-computed" readonly></div></div></div></div>
-        <div class="ability-block" data-ability="dex"><div class="block-header"><span class="block-title">Ловкость</span></div><div class="ability-scores"><div class="modifier-box"><input type="text" class="mod-display" value="+0" readonly></div><div class="score-box"><input type="number" id="dex" class="score-input calc-trigger" value="10"></div></div><div class="skill-list"><div class="skill-row"><div class="skill-check" id="save-dex" onclick="toggleCheck(this)"></div><span class="skill-name">Спасбросок</span><div class="skill-val"><input type="text" id="val-save-dex" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-acrobatics" onclick="toggleCheck(this)"></div><span class="skill-name">Акробатика</span><div class="skill-val"><input type="text" id="val-skill-acrobatics" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-sleight" onclick="toggleCheck(this)"></div><span class="skill-name">Ловкость рук</span><div class="skill-val"><input type="text" id="val-skill-sleight" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-stealth" onclick="toggleCheck(this)"></div><span class="skill-name">Скрытность</span><div class="skill-val"><input type="text" id="val-skill-stealth" class="skill-computed" readonly></div></div></div></div>
+        <div class="ability-block" data-ability="str"><div class="block-header"><span class="block-title">Сила</span></div><div class="ability-scores"><div class="modifier-box"><input type="text" class="mod-display" value="+0" readonly></div><div class="score-box"><input type="number" id="str" class="score-input calc-trigger" value="10"></div></div><div class="skill-list"><div class="skill-row"><div class="skill-check" id="save-str" onclick="toggleCheck(this)"></div><span class="skill-name">Спасбросок</span><div class="skill-val"><input type="text" id="val-save-str" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-athletics" onclick="toggleSkill(this)"></div><span class="skill-name">Атлетика</span><div class="skill-val"><input type="text" id="val-skill-athletics" class="skill-computed" readonly></div></div></div></div>
+        <div class="ability-block" data-ability="dex"><div class="block-header"><span class="block-title">Ловкость</span></div><div class="ability-scores"><div class="modifier-box"><input type="text" class="mod-display" value="+0" readonly></div><div class="score-box"><input type="number" id="dex" class="score-input calc-trigger" value="10"></div></div><div class="skill-list"><div class="skill-row"><div class="skill-check" id="save-dex" onclick="toggleCheck(this)"></div><span class="skill-name">Спасбросок</span><div class="skill-val"><input type="text" id="val-save-dex" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-acrobatics" onclick="toggleSkill(this)"></div><span class="skill-name">Акробатика</span><div class="skill-val"><input type="text" id="val-skill-acrobatics" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-sleight" onclick="toggleSkill(this)"></div><span class="skill-name">Ловкость рук</span><div class="skill-val"><input type="text" id="val-skill-sleight" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-stealth" onclick="toggleSkill(this)"></div><span class="skill-name">Скрытность</span><div class="skill-val"><input type="text" id="val-skill-stealth" class="skill-computed" readonly></div></div></div></div>
         <div class="ability-block" data-ability="con"><div class="block-header"><span class="block-title">Телосложение</span></div><div class="ability-scores"><div class="modifier-box"><input type="text" class="mod-display" value="+0" readonly></div><div class="score-box"><input type="number" id="con" class="score-input calc-trigger" value="10"></div></div><div class="skill-list"><div class="skill-row"><div class="skill-check" id="save-con" onclick="toggleCheck(this)"></div><span class="skill-name">Спасбросок</span><div class="skill-val"><input type="text" id="val-save-con" class="skill-computed" readonly></div></div></div></div>
       </div>
       
-      <div class="block" style="padding: 12px 8px 8px; text-align:center;"><div class="block-header"><span class="block-title">Истощение</span></div><div class="exhaustion-row" id="exhaustion-container"><div class="exhaust-box" onclick="toggleCheck(this)"></div><div class="exhaust-box" onclick="toggleCheck(this)"></div><div class="exhaust-box" onclick="toggleCheck(this)"></div><div class="exhaust-box" onclick="toggleCheck(this)"></div><div class="exhaust-box" onclick="toggleCheck(this)"></div><div class="exhaust-box" onclick="toggleCheck(this)"></div></div></div>
-      <div class="block" style="padding: 12px 8px 8px; text-align:center;"><div class="block-header"><span class="block-title">Вдохновение</span></div><div class="inspiration-box" id="inspiration" onclick="toggleCheck(this)"></div></div>
+      <div class="exhaust-insp-wrapper">
+        <div class="block" style="padding: 12px 8px 8px; text-align:center;"><div class="block-header"><span class="block-title">Истощение</span></div><div class="exhaustion-row" id="exhaustion-container"><div class="exhaust-box" onclick="toggleCheck(this)"></div><div class="exhaust-box" onclick="toggleCheck(this)"></div><div class="exhaust-box" onclick="toggleCheck(this)"></div><div class="exhaust-box" onclick="toggleCheck(this)"></div><div class="exhaust-box" onclick="toggleCheck(this)"></div><div class="exhaust-box" onclick="toggleCheck(this)"></div></div></div>
+        <div class="block" style="padding: 12px 8px 8px; text-align:center;"><div class="block-header"><span class="block-title">Вдохновение</span></div><div class="inspiration-box" id="inspiration" onclick="toggleCheck(this)"></div></div>
+      </div>
     </div>
 
     <div class="right-col">
       <div class="right-top-grid">
         <div class="stats-wrapper">
-          <div class="ability-block" data-ability="int"><div class="block-header"><span class="block-title">Интеллект</span></div><div class="ability-scores"><div class="modifier-box"><input type="text" class="mod-display" value="+0" readonly></div><div class="score-box"><input type="number" id="int" class="score-input calc-trigger" value="10"></div></div><div class="skill-list"><div class="skill-row"><div class="skill-check" id="save-int" onclick="toggleCheck(this)"></div><span class="skill-name">Спасбросок</span><div class="skill-val"><input type="text" id="val-save-int" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-investigation" onclick="toggleCheck(this)"></div><span class="skill-name">Анализ</span><div class="skill-val"><input type="text" id="val-skill-investigation" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-history" onclick="toggleCheck(this)"></div><span class="skill-name">История</span><div class="skill-val"><input type="text" id="val-skill-history" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-arcana" onclick="toggleCheck(this)"></div><span class="skill-name">Магия</span><div class="skill-val"><input type="text" id="val-skill-arcana" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-nature" onclick="toggleCheck(this)"></div><span class="skill-name">Природа</span><div class="skill-val"><input type="text" id="val-skill-nature" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-religion" onclick="toggleCheck(this)"></div><span class="skill-name">Религия</span><div class="skill-val"><input type="text" id="val-skill-religion" class="skill-computed" readonly></div></div></div></div>
-          <div class="ability-block" data-ability="wis"><div class="block-header"><span class="block-title">Мудрость</span></div><div class="ability-scores"><div class="modifier-box"><input type="text" class="mod-display" value="+0" readonly></div><div class="score-box"><input type="number" id="wis" class="score-input calc-trigger" value="10"></div></div><div class="skill-list"><div class="skill-row"><div class="skill-check" id="save-wis" onclick="toggleCheck(this)"></div><span class="skill-name">Спасбросок</span><div class="skill-val"><input type="text" id="val-save-wis" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-perception" onclick="toggleCheck(this)"></div><span class="skill-name">Восприятие</span><div class="skill-val"><input type="text" id="val-skill-perception" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-survival" onclick="toggleCheck(this)"></div><span class="skill-name">Выживание</span><div class="skill-val"><input type="text" id="val-skill-survival" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-medicine" onclick="toggleCheck(this)"></div><span class="skill-name">Медицина</span><div class="skill-val"><input type="text" id="val-skill-medicine" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-insight" onclick="toggleCheck(this)"></div><span class="skill-name">Проницательность</span><div class="skill-val"><input type="text" id="val-skill-insight" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-animal" onclick="toggleCheck(this)"></div><span class="skill-name">Уход за животными</span><div class="skill-val"><input type="text" id="val-skill-animal" class="skill-computed" readonly></div></div></div></div>
-          <div class="ability-block" data-ability="cha"><div class="block-header"><span class="block-title">Харизма</span></div><div class="ability-scores"><div class="modifier-box"><input type="text" class="mod-display" value="+0" readonly></div><div class="score-box"><input type="number" id="cha" class="score-input calc-trigger" value="10"></div></div><div class="skill-list"><div class="skill-row"><div class="skill-check" id="save-cha" onclick="toggleCheck(this)"></div><span class="skill-name">Спасбросок</span><div class="skill-val"><input type="text" id="val-save-cha" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-performance" onclick="toggleCheck(this)"></div><span class="skill-name">Выступление</span><div class="skill-val"><input type="text" id="val-skill-performance" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-intimidation" onclick="toggleCheck(this)"></div><span class="skill-name">Запугивание</span><div class="skill-val"><input type="text" id="val-skill-intimidation" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-deception" onclick="toggleCheck(this)"></div><span class="skill-name">Обман</span><div class="skill-val"><input type="text" id="val-skill-deception" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-persuasion" onclick="toggleCheck(this)"></div><span class="skill-name">Убеждение</span><div class="skill-val"><input type="text" id="val-skill-persuasion" class="skill-computed" readonly></div></div></div></div>
+          <div class="ability-block" data-ability="int"><div class="block-header"><span class="block-title">Интеллект</span></div><div class="ability-scores"><div class="modifier-box"><input type="text" class="mod-display" value="+0" readonly></div><div class="score-box"><input type="number" id="int" class="score-input calc-trigger" value="10"></div></div><div class="skill-list"><div class="skill-row"><div class="skill-check" id="save-int" onclick="toggleCheck(this)"></div><span class="skill-name">Спасбросок</span><div class="skill-val"><input type="text" id="val-save-int" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-investigation" onclick="toggleSkill(this)"></div><span class="skill-name">Анализ</span><div class="skill-val"><input type="text" id="val-skill-investigation" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-history" onclick="toggleSkill(this)"></div><span class="skill-name">История</span><div class="skill-val"><input type="text" id="val-skill-history" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-arcana" onclick="toggleSkill(this)"></div><span class="skill-name">Магия</span><div class="skill-val"><input type="text" id="val-skill-arcana" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-nature" onclick="toggleSkill(this)"></div><span class="skill-name">Природа</span><div class="skill-val"><input type="text" id="val-skill-nature" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-religion" onclick="toggleSkill(this)"></div><span class="skill-name">Религия</span><div class="skill-val"><input type="text" id="val-skill-religion" class="skill-computed" readonly></div></div></div></div>
+          <div class="ability-block" data-ability="wis"><div class="block-header"><span class="block-title">Мудрость</span></div><div class="ability-scores"><div class="modifier-box"><input type="text" class="mod-display" value="+0" readonly></div><div class="score-box"><input type="number" id="wis" class="score-input calc-trigger" value="10"></div></div><div class="skill-list"><div class="skill-row"><div class="skill-check" id="save-wis" onclick="toggleCheck(this)"></div><span class="skill-name">Спасбросок</span><div class="skill-val"><input type="text" id="val-save-wis" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-perception" onclick="toggleSkill(this)"></div><span class="skill-name">Восприятие</span><div class="skill-val"><input type="text" id="val-skill-perception" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-survival" onclick="toggleSkill(this)"></div><span class="skill-name">Выживание</span><div class="skill-val"><input type="text" id="val-skill-survival" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-medicine" onclick="toggleSkill(this)"></div><span class="skill-name">Медицина</span><div class="skill-val"><input type="text" id="val-skill-medicine" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-insight" onclick="toggleSkill(this)"></div><span class="skill-name">Проницательность</span><div class="skill-val"><input type="text" id="val-skill-insight" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-animal" onclick="toggleSkill(this)"></div><span class="skill-name">Уход за животными</span><div class="skill-val"><input type="text" id="val-skill-animal" class="skill-computed" readonly></div></div></div></div>
+          <div class="ability-block" data-ability="cha"><div class="block-header"><span class="block-title">Харизма</span></div><div class="ability-scores"><div class="modifier-box"><input type="text" class="mod-display" value="+0" readonly></div><div class="score-box"><input type="number" id="cha" class="score-input calc-trigger" value="10"></div></div><div class="skill-list"><div class="skill-row"><div class="skill-check" id="save-cha" onclick="toggleCheck(this)"></div><span class="skill-name">Спасбросок</span><div class="skill-val"><input type="text" id="val-save-cha" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-performance" onclick="toggleSkill(this)"></div><span class="skill-name">Выступление</span><div class="skill-val"><input type="text" id="val-skill-performance" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-intimidation" onclick="toggleSkill(this)"></div><span class="skill-name">Запугивание</span><div class="skill-val"><input type="text" id="val-skill-intimidation" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-deception" onclick="toggleSkill(this)"></div><span class="skill-name">Обман</span><div class="skill-val"><input type="text" id="val-skill-deception" class="skill-computed" readonly></div></div><div class="skill-row"><div class="skill-check" id="skill-persuasion" onclick="toggleSkill(this)"></div><span class="skill-name">Убеждение</span><div class="skill-val"><input type="text" id="val-skill-persuasion" class="skill-computed" readonly></div></div></div></div>
         </div>
 
-        <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="right-inner-col">
           <div class="combat-row">
             <div class="ac-shield"><span class="label">КД</span><div class="shield-shape"><input type="number" id="ac" value="10"></div></div>
             <div class="hp-block"><div class="block-header"><span class="block-title">Хиты</span></div><div class="hp-main-row"><div><div class="hp-field"><input type="number" id="hp-current" placeholder="—" style="width:40px;"></div><span class="label">Текущие</span></div><div style="color:var(--border);">/</div><div><div class="hp-field"><input type="number" id="hp-max" placeholder="—" style="width:40px;"></div><span class="label">Максимум</span></div></div><div class="hp-temp"><input type="number" id="hp-temp" placeholder="0"><span class="label">Временные</span></div></div>
@@ -210,7 +229,7 @@
             <div class="stat-box"><div class="block-header"><span class="block-title">Инициатива</span></div><input type="text" id="initiative" value="+0"></div>
             <div class="stat-box"><div class="block-header"><span class="block-title">Скорость</span></div><input type="text" id="speed" placeholder="30"></div>
             <div class="stat-box"><div class="block-header"><span class="block-title">П. Восприятие</span></div><input type="text" id="passive-perception" value="10" readonly></div>
-            <div class="stat-box"><div class="block-header"><span class="block-title">Состояния</span></div><textarea id="conditions" placeholder="—"></textarea></div>
+            <div class="stat-box status-box"><div class="block-header"><span class="block-title">Состояния</span></div><textarea id="conditions" placeholder="—"></textarea></div>
           </div>
 
           <div class="weapons-block">
@@ -267,6 +286,21 @@ const mode = urlParams.get('mode'); const rawData = urlParams.get('data'); const
 const statList = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 const skillMap = {'athletics': 'str', 'acrobatics': 'dex', 'sleight': 'dex', 'stealth': 'dex', 'investigation': 'int', 'history': 'int', 'arcana': 'int', 'nature': 'int', 'religion': 'int', 'perception': 'wis', 'survival': 'wis', 'medicine': 'wis', 'insight': 'wis', 'animal': 'wis', 'performance': 'cha', 'intimidation': 'cha', 'deception': 'cha', 'persuasion': 'cha'};
 
+// ── НОВАЯ ФУНКЦИЯ: 3 СОСТОЯНИЯ ДЛЯ НАВЫКОВ (КОМПЕТЕНТНОСТЬ) ──
+function toggleSkill(el) {
+  if (mode === 'view') return;
+  if (!el.classList.contains('checked') && !el.classList.contains('expertise')) {
+    el.classList.add('checked'); // 1 клик: Владение
+  } else if (el.classList.contains('checked')) {
+    el.classList.remove('checked');
+    el.classList.add('expertise'); // 2 клик: Компетентность (К)
+  } else {
+    el.classList.remove('expertise'); // 3 клик: Сброс
+  }
+  recalcSkills(el.closest('.ability-block'));
+}
+
+// Обычный чекбокс (Спасброски, смерти, снаряжение)
 function toggleCheck(el) {
   if (mode === 'view') return; el.classList.toggle('checked');
   if (el.classList.contains('skill-check')) recalcSkills(el.closest('.ability-block'));
@@ -279,7 +313,12 @@ function recalcSkills(block) {
   const mod = calcMod(parseInt(block.querySelector('.score-input').value)||10);
   const pb = getPB();
   block.querySelectorAll('.skill-row').forEach(row => {
-    row.querySelector('.skill-computed').value = formatMod(mod + (row.querySelector('.skill-check').classList.contains('checked') ? pb : 0));
+    const check = row.querySelector('.skill-check');
+    const isExp = check && check.classList.contains('expertise');
+    const isProf = check && check.classList.contains('checked');
+    // Удвоенный бонус мастерства для Компетентности!
+    const total = mod + (isExp ? pb * 2 : (isProf ? pb : 0));
+    row.querySelector('.skill-computed').value = formatMod(total);
   });
 }
 function recalcAll() {
@@ -288,7 +327,10 @@ function recalcAll() {
     recalcSkills(b);
   });
   const wisMod = calcMod(parseInt(document.getElementById('wis').value)||10);
-  document.getElementById('passive-perception').value = 10 + wisMod + (document.getElementById('skill-perception').classList.contains('checked') ? getPB() : 0);
+  const isPercExp = document.getElementById('skill-perception').classList.contains('expertise');
+  const isPercProf = document.getElementById('skill-perception').classList.contains('checked');
+  document.getElementById('passive-perception').value = 10 + wisMod + (isPercExp ? getPB()*2 : (isPercProf ? getPB() : 0));
+  
   const initEl = document.getElementById('initiative');
   if (!initEl.dataset.manual) initEl.value = formatMod(calcMod(parseInt(document.getElementById('dex').value)||10));
 }
@@ -304,7 +346,7 @@ function addWeapon() {
 }
 function removeWeapon() { const tbody = document.getElementById('weapons-body'); if(tbody.rows.length>1) tbody.deleteRow(-1); }
 
-// ЗАГРУЗКА ВСЕХ НОВЫХ ПОЛЕЙ
+// ЗАГРУЗКА ДАННЫХ
 function loadCharacterData(rawJson) {
     try {
         const d = JSON.parse(decodeURIComponent(rawJson));
@@ -313,10 +355,15 @@ function loadCharacterData(rawJson) {
         });
         if(d.stats) statList.forEach((s,i) => document.getElementById(s).value = d.stats[i] || 10);
         if(d.saves) statList.forEach((s,i) => { if(d.saves[i]==='True') document.getElementById(`save-${s}`).classList.add('checked'); });
-        if(d.skills) Object.keys(skillMap).forEach((s,i) => { if(d.skills[i]==='True') document.getElementById(`skill-${s}`).classList.add('checked'); });
-        if(d.coins) ['coin-cp','coin-sp','coin-ep','coin-gp','coin-pp'].forEach((id,i) => document.getElementById(id).value = d.coins[i] || 0);
         
-        // Сложные поля
+        // ЗАГРУЗКА НАВЫКОВ И КОМПЕТЕНТНОСТИ
+        if(d.skills) Object.keys(skillMap).forEach((s,i) => { 
+            const el = document.getElementById(`skill-${s}`);
+            if(d.skills[i] === 'True') el.classList.add('checked'); 
+            else if(d.skills[i] === 'Exp') el.classList.add('expertise');
+        });
+        
+        if(d.coins) ['coin-cp','coin-sp','coin-ep','coin-gp','coin-pp'].forEach((id,i) => document.getElementById(id).value = d.coins[i] || 0);
         if(d.exhaustion) { const bx = document.querySelectorAll('.exhaust-box'); for(let i=0; i<parseInt(d.exhaustion); i++) if(bx[i]) bx[i].classList.add('checked'); }
         if(d.inspiration === 'True') document.getElementById('inspiration').classList.add('checked');
         if(d.death_saves) {
@@ -344,18 +391,24 @@ if (mode === 'view') {
     document.getElementById('saveBtn').style.display = 'none';
 }
 
-// СОХРАНЕНИЕ ВСЕХ НОВЫХ ПОЛЕЙ
+// СОХРАНЕНИЕ ДАННЫХ
 document.getElementById('saveBtn').addEventListener('click', () => {
     try {
         const characterStats = {}; statList.forEach(s => characterStats[s] = {score: parseInt(document.getElementById(s).value)||10, saveProf: document.getElementById(`save-${s}`).classList.contains('checked')} );
-        const characterSkills = {}; for (const s in skillMap) characterSkills[s] = document.getElementById(`skill-${s}`).classList.contains('checked');
+        
+        // СОХРАНЕНИЕ НАВЫКОВ И КОМПЕТЕНТНОСТИ ('Exp', 'True', 'False')
+        const characterSkills = {}; 
+        for (const s in skillMap) {
+            const el = document.getElementById(`skill-${s}`);
+            if (el.classList.contains('expertise')) characterSkills[s] = 'Exp';
+            else if (el.classList.contains('checked')) characterSkills[s] = 'True';
+            else characterSkills[s] = 'False';
+        }
+        
         const coins = { cp: document.getElementById('coin-cp').value, sp: document.getElementById('coin-sp').value, ep: document.getElementById('coin-ep').value, gp: document.getElementById('coin-gp').value, pp: document.getElementById('coin-pp').value };
         
         let exhaustLvl = 0; document.querySelectorAll('.exhaust-box').forEach((b,i) => { if(b.classList.contains('checked')) exhaustLvl = i+1; });
-        const dSaves = {
-           success: document.querySelectorAll('.death-row')[0].querySelectorAll('.checked').length,
-           fail: document.querySelectorAll('.death-row')[1].querySelectorAll('.checked').length
-        };
+        const dSaves = { success: document.querySelectorAll('.death-row')[0].querySelectorAll('.checked').length, fail: document.querySelectorAll('.death-row')[1].querySelectorAll('.checked').length };
         const eqProfs = {}; document.querySelectorAll('.equip-item').forEach(el => eqProfs[el.dataset.eq] = el.classList.contains('checked'));
         const weaps = []; document.querySelectorAll('#weapons-body tr').forEach(tr => { const ins = tr.querySelectorAll('input'); weaps.push({n: ins[0].value, b: ins[1].value, d: ins[2].value, nt: ins[3].value}); });
 
