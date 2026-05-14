@@ -472,10 +472,29 @@ document.getElementById('saveBtn').addEventListener('click', () => {
             stats: characterStats, skills: characterSkills, inventory: { coins: coins, items: document.getElementById('inventoryText').value },
             equip_profs: eqProfs, weapons: weaps
         };
-        if (!charData.name) { tg.showAlert("Имя персонажа обязательно!"); return; }
-        tg.sendData(JSON.stringify(charData));
-        setTimeout(() => { tg.close(); }, 100);
-    } catch (err) { tg.showAlert("Критическая ошибка: " + err.message); }
+
+        if (!charData.name) { 
+            tg.showAlert("Имя персонажа обязательно!"); 
+            return; 
+        }
+
+        const payloadString = JSON.stringify(charData);
+        
+        // 1. ПРОВЕРКА ЛИМИТА ТЕЛЕГРАМА (4096 байт)
+        if (payloadString.length > 4000) {
+            tg.showAlert("Слишком много текста! Телеграм не может передать такой объем. Удали часть описания способностей или инвентаря. Размер: " + payloadString.length);
+            return;
+        }
+
+        // 2. ОТПРАВКА ДАННЫХ
+        tg.sendData(payloadString);
+        
+        // 3. УБРАЛИ РУЧНОЕ ЗАКРЫТИЕ (tg.close())
+        // Телеграм сам закроет окно, когда гарантированно отправит данные боту!
+
+    } catch (err) { 
+        tg.showAlert("Ошибка при отправке: " + err.message + "\nУбедись, что открыл лист через НИЖНЮЮ кнопку (около клавиатуры)!"); 
+    }
 });
 </script>
 </body>
