@@ -3,23 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="color-scheme" content="light only">
 <title>D&D 5e — Лист персонажа</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
+  /* Принудительная светлая тема — игнорируем системные настройки и тему Telegram */
   :root {
+    color-scheme: light only;
     --bg: #f7f5f0; --surface: #ffffff; --border: #c8bfb0; --border-light: #ddd8ce;
     --text: #2c2418; --text-muted: #7a6e60; --text-label: #9a8e80;
     --accent: #5c4a2a; --accent-gold: #c4a35a; --accent-red: #8b2222;
     --shadow: rgba(92,74,42,0.12); --radius: 4px; --checked-bg: #2c2418;
     --grid-color: rgba(92,74,42,0.06);
   }
+  /* Блокируем любые попытки системы или Telegram применить тёмную тему */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #f7f5f0 !important; --surface: #ffffff !important; --border: #c8bfb0 !important;
+      --border-light: #ddd8ce !important; --text: #2c2418 !important;
+      --text-muted: #7a6e60 !important; --text-label: #9a8e80 !important;
+      --accent: #5c4a2a !important; --accent-gold: #c4a35a !important;
+      --accent-red: #8b2222 !important; --checked-bg: #2c2418 !important;
+      --grid-color: rgba(92,74,42,0.06) !important;
+    }
+  }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html {
+    background-color: #f7f5f0 !important; /* Принудительно светлый фон даже до загрузки CSS */
+  }
   body {
-    font-family: 'Crimson Pro', Georgia, serif; background: var(--bg);
+    font-family: 'Crimson Pro', Georgia, serif;
+    background: var(--bg) !important; /* !important перекрывает инлайн-стили Telegram JS SDK */
     color: var(--text); font-size: 14px; line-height: 1.4;
     min-height: 100vh; padding-bottom: 80px; -webkit-font-smoothing: antialiased;
   }
@@ -289,8 +307,14 @@
 <button id="saveBtn" class="save-btn">Сохранить героя</button>
 
 <script>
-const tg = window.Telegram.WebApp; tg.expand(); tg.ready();
-document.body.style.backgroundColor = window.Telegram.WebApp.backgroundColor || '#f7f5f0';
+const tg = window.Telegram.WebApp;
+tg.expand();
+tg.ready();
+// Принудительно светлая тема — НЕ берём цвет из Telegram (он может быть тёмным)
+// document.body.style.backgroundColor убран намеренно: цвет задан в CSS с !important
+// Запрещаем Telegram SDK переопределять цвет фона страницы
+if (tg.setHeaderColor) tg.setHeaderColor('#f7f5f0');
+if (tg.setBackgroundColor) tg.setBackgroundColor('#f7f5f0');
 
 const urlParams = new URLSearchParams(window.location.search);
 const mode = urlParams.get('mode'); const rawData = urlParams.get('data'); const charId = urlParams.get('char_id');
@@ -314,7 +338,8 @@ function toggleSkill(el) {
 
 // Обычный чекбокс
 function toggleCheck(el) {
-  if (mode === 'view') return; el.classList.toggle('checked');
+  if (mode === 'view') return;
+  el.classList.toggle('checked');
   if (el.classList.contains('skill-check')) recalcSkills(el.closest('.ability-block'));
 }
 
@@ -345,7 +370,7 @@ function recalcAll() {
     b.querySelector('.mod-display').value = formatMod(calcMod(parseInt(b.querySelector('.score-input').value)||10));
     recalcSkills(b);
   });
-  
+
   const wisMod = calcMod(parseInt(document.getElementById('wis').value)||10);
   const percEl = document.getElementById('skill-perception');
   let percBonus = 0;
@@ -354,9 +379,12 @@ function recalcAll() {
     else if (percEl.classList.contains('checked')) percBonus = getPB();
   }
   document.getElementById('passive-perception').value = 10 + wisMod + percBonus;
-  
+
+  // Инициатива — пересчитываем только если пользователь не ввёл вручную
   const initEl = document.getElementById('initiative');
-  if (initEl && !initEl.dataset.manual) initEl.value = formatMod(calcMod(parseInt(document.getElementById('dex').value)||10));
+  if (initEl && !initEl.dataset.manual) {
+    initEl.value = formatMod(calcMod(parseInt(document.getElementById('dex').value)||10));
+  }
 }
 
 document.querySelectorAll('.score-input').forEach(i => i.addEventListener('input', recalcAll));
@@ -370,75 +398,171 @@ function addWeapon() {
 }
 function removeWeapon() { const tbody = document.getElementById('weapons-body'); if(tbody.rows.length>1) tbody.deleteRow(-1); }
 
-// ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ С СИСТЕМОЙ УВЕДОМЛЕНИЙ ОБ ОШИБКАХ
+// ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ
 function loadCharacterData(rawJson) {
     if (!rawJson) return;
     try {
         const d = JSON.parse(decodeURIComponent(rawJson));
-        
-        if (document.getElementById('charName')) document.getElementById('charName').value = d.name || '';
-        if (document.getElementById('charClass')) document.getElementById('charClass').value = d.class || '';
-        if (document.getElementById('charRace')) document.getElementById('charRace').value = d.race || '';
-        if (document.getElementById('initiative')) document.getElementById('initiative').value = d.init || d.initiative || '';
-        if (document.getElementById('inventoryText')) document.getElementById('inventoryText').value = d.items || d.inventoryText || '';
 
-        ['charBackground', 'charSubclass', 'charAlignment', 'level', 'ac', 'hp-current', 'hp-max', 'hp-temp', 'hd-dice', 'hd-current', 'hd-max', 'speed', 'conditions', 'class-features', 'racial-traits', 'feats', 'tools-languages'].forEach(id => {
-            if (document.getElementById(id) && d[id] !== undefined) {
-                document.getElementById(id).value = d[id];
-            }
-        });
-
-        if(d.stats) statList.forEach((s,i) => { if(document.getElementById(s)) document.getElementById(s).value = d.stats[i] || 10; });
-        if(d.saves) statList.forEach((s,i) => { if(d.saves[i]==='True' && document.getElementById(`save-${s}`)) document.getElementById(`save-${s}`).classList.add('checked'); });
-        
-        if(d.skills) Object.keys(skillMap).forEach((s,i) => { 
-            const el = document.getElementById(`skill-${s}`);
-            if(el) {
-              if(d.skills[i] === 'True') el.classList.add('checked'); 
-              else if(d.skills[i] === 'Exp') el.classList.add('expertise');
-            }
-        });
-        
-        if(d.coins) ['coin-cp','coin-sp','coin-ep','coin-gp','coin-pp'].forEach((id,i) => { if(document.getElementById(id)) document.getElementById(id).value = d.coins[i] || 0; });
-        if(d.exhaustion) { const bx = document.querySelectorAll('.exhaust-box'); for(let i=0; i<parseInt(d.exhaustion); i++) if(bx[i]) bx[i].classList.add('checked'); }
-        if(d.inspiration === 'True') { const insp = document.getElementById('inspiration'); if (insp) insp.classList.add('checked'); }
-        if(d.death_saves) {
-           const sC = document.querySelectorAll('.death-row')[0].querySelectorAll('.diamond-check'); for(let i=0; i<d.death_saves.success; i++) if(sC[i]) sC[i].classList.add('checked');
-           const fC = document.querySelectorAll('.death-row')[1].querySelectorAll('.diamond-check'); for(let i=0; i<d.death_saves.fail; i++) if(fC[i]) fC[i].classList.add('checked');
+        // Простые текстовые поля — поддерживаем оба варианта ключей (бот использует без префикса char)
+        const fieldMap = {
+            'charName':        d.name,
+            'charClass':       d.class,
+            'charRace':        d.race,
+            'charBackground':  d.background  || d.charBackground,   // ← исправлено
+            'charSubclass':    d.subclass    || d.charSubclass,     // ← исправлено
+            'charAlignment':   d.alignment   || d.charAlignment,    // ← исправлено
+            'level':           d.level,
+            'ac':              d.ac,
+            'hp-current':      d['hp-current'],
+            'hp-max':          d['hp-max'],
+            'hp-temp':         d['hp-temp'],
+            'hd-dice':         d['hd-dice'],
+            'hd-current':      d['hd-current'],
+            'hd-max':          d['hd-max'],
+            'speed':           d.speed,
+            'conditions':      d.conditions,
+            'class-features':  d['class-features'],
+            'racial-traits':   d['racial-traits'],
+            'feats':           d.feats,
+            'tools-languages': d['tools-languages'],
+            'inventoryText':   d.items || (d.inventory && d.inventory.items),
+        };
+        for (const [id, val] of Object.entries(fieldMap)) {
+            const el = document.getElementById(id);
+            if (el && val !== undefined && val !== null) el.value = val;
         }
-        if(d.equip_profs) document.querySelectorAll('.equip-item').forEach(el => { if(d.equip_profs[el.dataset.eq]) el.classList.add('checked'); });
-        
-        if(d.weapons && d.weapons.length > 0) {
-            const tb = document.getElementById('weapons-body'); 
-            if(tb) {
+
+        // Инициатива — ставим до recalcAll, чтобы флаг manual работал
+        if (d.initiative !== undefined || d.init !== undefined) {
+            const initEl = document.getElementById('initiative');
+            if (initEl) {
+                initEl.value = d.initiative || d.init || '';
+                initEl.dataset.manual = 'true'; // ← до recalcAll, иначе recalcAll перезапишет
+            }
+        }
+
+        // Характеристики — бот хранит как массив строк [10, 12, …] (6 штук)
+        if (d.stats) {
+            if (Array.isArray(d.stats)) {
+                statList.forEach((s, i) => {
+                    const el = document.getElementById(s);
+                    if (el) el.value = d.stats[i] || 10;
+                });
+            } else {
+                // на случай если боt вернул объект {str:{score:10}, …}
+                statList.forEach(s => {
+                    const el = document.getElementById(s);
+                    if (el && d.stats[s]) el.value = d.stats[s].score || d.stats[s] || 10;
+                });
+            }
+        }
+
+        // Спасброски — массив строк ['True','False',…]
+        if (d.saves) {
+            statList.forEach((s, i) => {
+                const el = document.getElementById(`save-${s}`);
+                if (el && (d.saves[i] === 'True' || d.saves[i] === true)) el.classList.add('checked');
+            });
+        }
+
+        // Навыки — массив строк ['True','False','Exp',…]
+        if (d.skills) {
+            Object.keys(skillMap).forEach((s, i) => {
+                const el = document.getElementById(`skill-${s}`);
+                if (!el) return;
+                const val = Array.isArray(d.skills) ? d.skills[i] : d.skills[s];
+                if (val === 'True' || val === true)  el.classList.add('checked');
+                else if (val === 'Exp')               el.classList.add('expertise');
+            });
+        }
+
+        // Монеты — бот кладёт как массив в d.coins ИЛИ вложенный объект d.inventory.coins
+        const coinsData = d.coins || (d.inventory && d.inventory.coins);
+        if (coinsData) {
+            if (Array.isArray(coinsData)) {
+                ['coin-cp','coin-sp','coin-ep','coin-gp','coin-pp'].forEach((id, i) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = coinsData[i] || 0;
+                });
+            } else {
+                // объект {cp:0, sp:0, …}
+                const keys = ['cp','sp','ep','gp','pp'];
+                keys.forEach(k => {
+                    const el = document.getElementById(`coin-${k}`);
+                    if (el) el.value = coinsData[k] || 0;
+                });
+            }
+        }
+
+        // Истощение
+        if (d.exhaustion) {
+            const bx = document.querySelectorAll('.exhaust-box');
+            for (let i = 0; i < parseInt(d.exhaustion); i++) if (bx[i]) bx[i].classList.add('checked');
+        }
+
+        // Вдохновение
+        if (d.inspiration === 'True' || d.inspiration === true) {
+            const insp = document.getElementById('inspiration');
+            if (insp) insp.classList.add('checked');
+        }
+
+        // Спасброски от смерти
+        if (d.death_saves) {
+            const rows = document.querySelectorAll('.death-row');
+            if (rows[0]) {
+                const sC = rows[0].querySelectorAll('.diamond-check');
+                for (let i = 0; i < (d.death_saves.success || 0); i++) if (sC[i]) sC[i].classList.add('checked');
+            }
+            if (rows[1]) {
+                const fC = rows[1].querySelectorAll('.diamond-check');
+                for (let i = 0; i < (d.death_saves.fail || 0); i++) if (fC[i]) fC[i].classList.add('checked');
+            }
+        }
+
+        // Владение снаряжением
+        if (d.equip_profs) {
+            document.querySelectorAll('.equip-item').forEach(el => {
+                if (d.equip_profs[el.dataset.eq]) el.classList.add('checked');
+            });
+        }
+
+        // Оружие
+        if (d.weapons && d.weapons.length > 0) {
+            const tb = document.getElementById('weapons-body');
+            if (tb) {
                 tb.innerHTML = '';
                 d.weapons.forEach(w => {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td><input type="text" value="${w.n || ''}"></td><td><input type="text" value="${w.b || ''}"></td><td><input type="text" value="${w.d || ''}"></td><td><input type="text" value="${w.nt || ''}"></td>`;
+                    const esc = s => String(s || '').replace(/"/g, '&quot;'); // ← XSS-защита
+                    tr.innerHTML = `<td><input type="text" value="${esc(w.n)}"></td><td><input type="text" value="${esc(w.b)}"></td><td><input type="text" value="${esc(w.d)}"></td><td><input type="text" value="${esc(w.nt)}"></td>`;
                     tb.appendChild(tr);
                 });
             }
         }
-        if(d.init || d.initiative) {
-            const initEl = document.getElementById('initiative');
-            if (initEl) initEl.dataset.manual = "true";
-        }
-    } catch(e) { 
-        tg.showAlert("Критическая ошибка: бот передал сломанные данные! Причина: " + e.message); 
+
+    } catch(e) {
+        tg.showAlert('Ошибка загрузки данных персонажа:\n' + e.message);
     }
 }
 
-// ПРОВЕРКА НАЛИЧИЯ ДАННЫХ ПРИ ОТКРЫТИИ
+// Сначала загружаем данные (внутри уже ставится dataset.manual для инициативы),
+// потом recalcAll — чтобы он не перезатёр загруженную инициативу
 if (rawData) {
     loadCharacterData(rawData);
 } else if (mode === 'edit' || mode === 'view') {
-    tg.showAlert("Внимание: Бот не передал данные персонажа в ссылку! Открыт чистый лист.");
+    tg.showAlert('Внимание: бот не передал данные персонажа. Открыт чистый лист.');
 }
 
 recalcAll();
 
 if (mode === 'view') {
     document.querySelectorAll('input, textarea').forEach(i => i.readOnly = true);
+    // Блокируем клики по чекбоксам и кнопкам в режиме просмотра
+    document.querySelectorAll('.skill-check, .exhaust-box, .inspiration-box, .diamond-check, .equip-item, .btn-sm').forEach(el => {
+        el.style.pointerEvents = 'none';
+        el.style.cursor = 'default';
+    });
     document.getElementById('saveBtn').style.display = 'none';
 }
 
@@ -485,7 +609,7 @@ document.getElementById('saveBtn').addEventListener('click', () => {
         const payloadString = JSON.stringify(charData);
         
         // 1. ПРОВЕРКА ЛИМИТА ТЕЛЕГРАМА (4096 байт)
-       if (new TextEncoder().encode(payloadString).length > 4096) {
+        if (payloadString.length > 4000) {
             tg.showAlert("Слишком много текста! Телеграм не может передать такой объем. Удали часть описания способностей или инвентаря. Размер: " + payloadString.length);
             return;
         }
